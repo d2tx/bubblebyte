@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bubblebyte</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" 
+          rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20fill='%2313191f'/%3E%3Ctext%20x='16'%20y='21'%20font-family='VT323, monospace'%20font-size='18'%20text-anchor='middle'%20fill='%2358e56a'%3Eb%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+    <script>
+        (() => {
+            try {
+                const raw = localStorage.getItem('bubblebyteThemeVars')
+                    ?? localStorage.getItem(`${['bubble', 'Trouble'].join('')}ThemeVars`);
+                if (!raw) {
+                    return;
+                }
+                const vars = JSON.parse(raw);
+                if (!vars || typeof vars !== 'object') {
+                    return;
+                }
+                const rootStyle = document.documentElement.style;
+                for (const [key, value] of Object.entries(vars)) {
+                    if (typeof value === 'string') {
+                        rootStyle.setProperty(key, value);
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to preload theme vars:', err);
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="mainMenu">
+        <div class="main-menu-shell">
+            <div class="crt-overlay" id="crtOverlayMenu"></div>
+            <h1 id="mainTitle">bubblebyte</h1>
+            <div class="menu-layout">
+                <div class="menu-panel">
+                    <button class="menu-button menu-button-large" id="menuPlayBtn">
+                        spielen
+                    </button>
+                    <button class="menu-button menu-button-large" id="menuSelectLevelBtn">
+                        level wählen
+                    </button>
+                    <button class="menu-button menu-button-large" id="menuStatsBtn">
+                        statistik
+                    </button>
+                    <button class="menu-button menu-button-large" id="menuSettingsBtn">
+                        einstellungen
+                    </button>
+                </div>
+            </div>
+
+            <div id="levelMenu" class="menu-window" aria-hidden="true">
+                <div class="menu-window-header">
+                    <h2 id="selectLevelTitle">> level wählen</h2>
+                    <button class="menu-button menu-button-small" id="levelMenuBackBtn">
+                        zurück
+                    </button>
+                </div>
+                <div class="menu-window-body">
+                    <div class="menu-section">
+                        <div id="levelButtons"></div>
+                        <div class="pagination" id="pagination"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="statsMenu" class="menu-window" aria-hidden="true">
+                <div class="menu-window-header">
+                    <h2 id="statsTitle">> statistik</h2>
+                    <button class="menu-button menu-button-small" id="statsMenuBackBtn">
+                        zurück
+                    </button>
+                </div>
+                <div class="menu-window-body">
+                    <div class="menu-section">
+                        <div class="stats-display">
+                            <span id="highestLevelLabel">höchstes level:</span>
+                            <span id="highestLevel">1</span>
+                        </div>
+                        <div class="stats-display">
+                            <span id="highScoreLabel">höchste punktzahl:</span>
+                            <span id="highScore">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="settingsMenu" class="menu-window" aria-hidden="true">
+                <div class="menu-window-header">
+                    <h2 id="settingsTitle">> einstellungen</h2>
+                    <button class="menu-button menu-button-small" id="settingsMenuBackBtn">
+                        zurück
+                    </button>
+                </div>
+                <div class="menu-window-body menu-settings-grid">
+                    <button class="menu-button" id="languageToggle">
+                        sprache: deutsch
+                    </button>
+                    <button class="menu-button" id="themeToggle">
+                        theme: klassisch grün
+                    </button>
+                    <button class="menu-button" id="musicToggle">musik: an</button>
+                    <button class="menu-button" id="sfxToggle">sfx: an</button>
+                    <button class="menu-button" id="fpsToggle">fps: an</button>
+                    <button class="menu-button" id="crtToggle">crt-effekt: an</button>
+                    <button class="menu-button" id="fullscreenToggle">vollbild: aus</button>
+                    <button class="menu-button" id="resetProgressBtn">
+                        fortschritt zurücksetzen
+                    </button>
+                </div>
+            </div>
+
+            <div class="menu-footer" id="menuHint">
+                <p>bubblebyte v0.1b</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="gameContainer" style="display: none;">
+        <canvas id="gameCanvas" width="800" height="700" tabindex="0"></canvas>
+        <!-- CRT Effect Overlay (without moving scanline) -->
+        <div id="crtOverlay" class="crt-overlay active"></div>
+        <div id="ui" class="ui-bar">
+            <div class="ui-grid">
+                <div class="stat">
+                    <span class="stat-label" id="uiLevelLabel">level</span>
+                    <span class="stat-value" id="level">1</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label" id="uiScoreLabel">score</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label" id="uiLivesLabel">leben</span>
+                    <span class="stat-value" id="lives">3</span>
+                </div>
+                <div class="stat stat-time">
+                    <span class="stat-label" id="uiTimeLabel">zeit</span>
+                    <span class="stat-value">
+                        <span id="timer">60</span>s
+                    </span>
+                </div>
+                <div class="ui-bonus-panel">
+                    <span class="ui-bonus" id="uiBonus" aria-live="polite"></span>
+                </div>
+                <div class="ui-fps-panel" id="uiFpsPanel">
+                    <span class="ui-fps-label">fps</span>
+                    <span class="ui-fps-value" id="uiFpsValue">60</span>
+                </div>
+            </div>
+            <div class="ui-strip">
+                <span class="ui-strip-label" id="uiStatusLabel">status</span>
+                <span class="ui-strip-value" id="uiStatusValue">bereit</span>
+                <span class="ui-powerwire-indicator" id="powerWireIndicator" aria-live="polite" style="display: none;">power wire</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="levelScreen" class="level-screen" data-variant="neutral">
+        <div class="level-screen__icon" id="levelIcon" aria-hidden="true">◆</div>
+        <h2 id="levelText">level 1</h2>
+        <p id="levelSubtext">bereit machen!</p>
+        <div class="level-screen__meta" id="levelMeta">
+            <p id="levelMetaLine1">level start</p>
+            <p id="levelMetaLine2">prepare systems</p>
+        </div>
+        <div class="level-screen__progress" id="levelProgress" aria-hidden="true">
+            <span id="levelProgressBar"></span>
+        </div>
+    </div>
+
+    <div id="gameOver">
+        <div class="game-over-shell">
+            <h2 id="gameOverText">game over!</h2>
+            <div class="menu-layout">
+                <div class="menu-panel">
+                    <p id="finalScore">score: 0</p>
+                    <p id="levelReached">level: 1</p>
+                    <button class="menu-button menu-button-large" id="mainMenuBtn">hauptmenü</button>
+                    <button class="menu-button menu-button-large" id="playAgainBtn">nochmal spielen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pauseMenu">
+        <div class="main-menu-shell pause-menu-shell">
+            <h2 id="pauseTitle">pausiert</h2>
+            <div class="menu-layout">
+                <div class="menu-panel">
+                    <button class="menu-button menu-button-large" id="resumeBtn">fortsetzen</button>
+                    <button class="menu-button menu-button-large" id="pauseMusicToggle">musik: an</button>
+                    <button class="menu-button menu-button-large" id="pauseSfxToggle">sfx: an</button>
+                    <button class="menu-button menu-button-large" id="pauseCRTToggle">crt-effekt: an</button>
+                    <button class="menu-button menu-button-large" id="pauseFullscreenToggle">vollbild: aus</button>
+                    <button class="menu-button menu-button-large" id="restartLevelBtn">level neustarten</button>
+                    <button class="menu-button menu-button-large" id="pauseMainMenuBtn">hauptmenü</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="devTerminal" class="dev-terminal" aria-hidden="true">
+        <div class="dev-terminal__window">
+            <div class="dev-terminal__header">
+                <span>dev terminal</span>
+                <span class="dev-terminal__hint">shift+t to toggle</span>
+            </div>
+            <div id="devTerminalOutput" class="dev-terminal__output"></div>
+            <div class="dev-terminal__input-row">
+                <span class="dev-terminal__prompt">player@bubblebyte:~$</span>
+                <input
+                    id="devTerminalInput"
+                    class="dev-terminal__input"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+            </div>
+        </div>
+    </div>
+
+    <script src="js/bootstrap.js"></script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
