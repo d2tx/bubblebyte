@@ -1,5 +1,7 @@
 # bubblebyte
 
+***Work in progress — prototype stage.***
+
 A browser-based arcade game inspired by *Bubble Trouble* / *Pang*, built from scratch with vanilla JavaScript and HTML5 Canvas.
 
 Pop the bubbles. Don't let them touch you. Clear all 36 levels spread across 6 worlds.
